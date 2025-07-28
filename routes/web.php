@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LoanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavingsController;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,10 @@ Route::middleware(['auth', 'active.user'])->group(function () {
 
     // Savings routes
     Route::get('/simpanan', [SavingsController::class, 'index'])->name('savings.index');
+
+    // Loan routes
+    Route::get('/pinjaman', [LoanController::class, 'index'])->name('loans.index');
+    Route::get('/pinjaman/{loan}', [LoanController::class, 'show'])->name('loans.show');
 });
 
 require __DIR__ . '/auth.php';

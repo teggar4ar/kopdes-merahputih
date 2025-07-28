@@ -115,36 +115,25 @@ class DashboardController extends Controller
             ];
         }
 
-        // Calculate total paid installments
-        $totalPaid = $activeLoan->loanInstallments()->sum('amount');
+        // Calculate progress percentage
+        $progressPercentage = $activeLoan->loan_amount > 0 ?
+            (($activeLoan->total_paid / $activeLoan->loan_amount) * 100) : 0;
 
-        // Calculate remaining balance
-        $remainingBalance = $activeLoan->principal_amount - $totalPaid;
-
-        // Calculate monthly payment (principal + interest divided by duration)
-        $totalWithInterest = $activeLoan->principal_amount * (1 + ($activeLoan->interest_rate / 100));
-        $monthlyPayment = $totalWithInterest / $activeLoan->duration_months;
-
-        // Calculate next installment number
+        // Calculate paid installments count
         $paidInstallments = $activeLoan->loanInstallments()->count();
         $nextInstallmentNumber = $paidInstallments + 1;
 
         return [
             'has_active_loan' => true,
             'loan' => $activeLoan,
-            'principal_amount' => $activeLoan->principal_amount,
-            'formatted_principal' => 'Rp ' . number_format($activeLoan->principal_amount, 0, ',', '.'),
-            'total_paid' => $totalPaid,
-            'formatted_total_paid' => 'Rp ' . number_format($totalPaid, 0, ',', '.'),
-            'remaining_balance' => $remainingBalance,
-            'formatted_remaining' => 'Rp ' . number_format($remainingBalance, 0, ',', '.'),
-            'monthly_payment' => $monthlyPayment,
-            'formatted_monthly_payment' => 'Rp ' . number_format($monthlyPayment, 0, ',', '.'),
-            'duration_months' => $activeLoan->duration_months,
-            'paid_installments' => $paidInstallments,
-            'next_installment' => $nextInstallmentNumber,
-            'interest_rate' => $activeLoan->interest_rate,
-            'status' => $activeLoan->status
+            'formatted_principal' => 'Rp ' . number_format($activeLoan->loan_amount, 0, ',', '.'),
+            'formatted_remaining' => 'Rp ' . number_format($activeLoan->remaining_balance, 0, ',', '.'),
+            'formatted_monthly_payment' => 'Rp ' . number_format($activeLoan->monthly_installment, 0, ',', '.'),
+            'next_installment_number' => $nextInstallmentNumber,
+            'total_installments' => $activeLoan->loan_term_months,
+            'progress_percentage' => round($progressPercentage, 1),
+            'status' => $activeLoan->status,
+            'message' => 'Pinjaman aktif'
         ];
     }
 

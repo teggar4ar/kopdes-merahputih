@@ -1,28 +1,43 @@
 # Product Requirements Document (PRD) – “Koperasi Merah Putih” Web App v1.1
 
 *(Version 1.1 – reflects significant r#### FR‑M2: Member Dashboard  
-- Savings summ#### FR‑A3: Financial Transaction Management  
-- Manual deposit entry: select member & saving type → amount → upload proof (JPG/PNG/PDF, max 2 MB)  
-- Process withdrawal requests → mark as "Processed" → auto‑record transaction  
-- General ledger view with robust filtering
+-#### FR‑M4: Loan Management  
+- Loan application form: Principal Amount, Term (3/6/12 months), Reason/Purpose  
+- Interactive Livewire calculator (uses admin‑set annual interest rate) 
+- Real-time display of calculated monthly installment amount
+- Track application status: Pending, Approved, Rejected, Disbursed, Completed
+- View loan details: principal amount, interest rate, duration, monthly payment, total paid, remaining balance
+
+#### FR‑M5: Profile Management  
+- View full profile  
+- Edit phone & address (Name & NIK read‑only)  
+- Separate "Change Password" form (requires current password)summ#### FR‑A3: Financial Transaction Management  
+- Manual deposit entry: select member & saving type → amount → upload proof (JPG/PNG/PDF, max 2 MB) → approve/reject
+- Process withdrawal requests → approve/reject → mark as "Completed/Rejected" → auto‑record transaction  
+- General ledger view with robust filtering by status, type, member, date range
+- Transaction approval workflow with status tracking (pending → completed/rejected)
 - **Savings Type Rules:**
   - Simpanan Pokok: Monthly Rp 50,000 (track payment compliance)
   - Simpanan Wajib: One-time Rp 100,000 (verify not already paid)
-  - Simpanan Sukarela: Any amount (allow withdrawals)with three types:
-  - **Simpanan Pokok (Principal)**: Paid monthly at Rp 50,000
-  - **Simpanan Wajib (Mandatory)**: One-time payment of Rp 100,000  
-  - **Simpanan Sukarela (Voluntary)**: Variable amounts as desired
-- Loan summary (total, paid, next installment date/amount) or "No active loan"  
-- Latest 3 announcements  
+  - Simpanan Sukarela: Any amount (allow withdrawals)
+  #### FR‑A4: Loan Management (Admin)
+- Review loan applications: view member financial history → approve/reject with notes
+- Record loan disbursement with first installment date  
+- Process loan installment payments: amount, payment date, proof upload
+- Automatic calculation of remaining balance and loan completion status
+- Loan status management: pending → approved → disbursed → completed
+- Track total paid amount and remaining balance for each loan  
 
 #### FR‑M3: Savings Management  
-- Transaction history table: Date | Type | Description | Debit/Credit | Balance  
-- Filters: saving type & date range  
-- Voluntary withdrawal request form (amount + note)
+- Transaction history table: Date | Type | Description | Debit/Credit | Balance | Status
+- Filters: saving type, transaction status & date range  
+- Deposit request form: Select savings type → amount → upload proof → submit for approval
+- Voluntary withdrawal request form (amount + note) → submit for approval
+- Track request status: Pending, Completed, Rejected
 - **Business Rules:**
-  - Simpanan Pokok: Monthly Rp 50,000 payments
-  - Simpanan Wajib: One-time Rp 100,000 payment (cannot be withdrawn)
-  - Simpanan Sukarela: Flexible deposits and withdrawalsts updates)*
+  - Simpanan Pokok: Monthly Rp 50,000 payments (check compliance)
+  - Simpanan Wajib: One-time Rp 100,000 payment (cannot be withdrawn, verify not already paid)
+  - Simpanan Sukarela: Flexible deposits and withdrawals (any amount)
 
 ---
 

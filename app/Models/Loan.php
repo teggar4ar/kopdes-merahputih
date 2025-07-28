@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -9,11 +10,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * @property int $id
  * @property int $user_id
- * @property float $loan_amount
+ * @property float $principal_amount
  * @property float $interest_rate
- * @property int $loan_term_months
+ * @property int $duration_months
  * @property float $monthly_installment
- * @property string $loan_purpose
+ * @property string $reason
  * @property string $status
  * @property \Illuminate\Support\Carbon $application_date
  * @property \Illuminate\Support\Carbon|null $approval_date
@@ -25,6 +26,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ *
+ * Backward compatibility accessors:
+ * @property-read float $loan_amount (alias for principal_amount)
+ * @property-read int $loan_term_months (alias for duration_months)
+ * @property-read string $loan_purpose (alias for reason)
  */
 class Loan extends Model
 {
@@ -37,11 +43,11 @@ class Loan extends Model
      */
     protected $fillable = [
         'user_id',
-        'loan_amount',
+        'principal_amount',
         'interest_rate',
-        'loan_term_months',
+        'duration_months',
         'monthly_installment',
-        'loan_purpose',
+        'reason',
         'status',
         'application_date',
         'approval_date',
@@ -63,12 +69,49 @@ class Loan extends Model
             'application_date' => 'datetime',
             'approval_date' => 'datetime',
             'first_installment_date' => 'datetime',
-            'loan_amount' => 'decimal:2',
+            'principal_amount' => 'decimal:2',
             'interest_rate' => 'decimal:2',
             'monthly_installment' => 'decimal:2',
             'total_paid' => 'decimal:2',
             'remaining_balance' => 'decimal:2',
         ];
+    }
+
+    // ===============================
+    // ACCESSORS FOR BACKWARD COMPATIBILITY
+    // ===============================
+
+    /**
+     * Accessor for loan_amount (maps to principal_amount).
+     */
+    protected function loanAmount(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => $this->principal_amount,
+            set: fn($value) => ['principal_amount' => $value],
+        );
+    }
+
+    /**
+     * Accessor for loan_term_months (maps to duration_months).
+     */
+    protected function loanTermMonths(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => $this->duration_months,
+            set: fn($value) => ['duration_months' => $value],
+        );
+    }
+
+    /**
+     * Accessor for loan_purpose (maps to reason).
+     */
+    protected function loanPurpose(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => $this->reason,
+            set: fn($value) => ['reason' => $value],
+        );
     }
 
     // ===============================
@@ -192,7 +235,7 @@ class Loan extends Model
      */
     public function calculateTotalAmount(): float
     {
-        return $this->monthly_installment * $this->loan_term_months;
+        return $this->monthly_installment * $this->duration_months;
     }
 
     /**
@@ -200,7 +243,7 @@ class Loan extends Model
      */
     public function calculateTotalInterest(): float
     {
-        return $this->calculateTotalAmount() - $this->loan_amount;
+        return $this->calculateTotalAmount() - $this->principal_amount;
     }
 
     /**
@@ -220,7 +263,7 @@ class Loan extends Model
      */
     public function getFormattedLoanAmountAttribute(): string
     {
-        return 'Rp ' . number_format($this->loan_amount, 0, ',', '.');
+        return 'Rp ' . number_format($this->principal_amount, 0, ',', '.');
     }
 
     /**

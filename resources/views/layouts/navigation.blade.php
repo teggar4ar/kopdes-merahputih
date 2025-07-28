@@ -21,7 +21,7 @@
                             {{ __('Simpanan') }}
                         </x-nav-link>
 
-                        <x-nav-link :href="'#'" :active="request()->routeIs('loans.*')">
+                        <x-nav-link :href="route('loans.index')" :active="request()->routeIs('loans.*')">
                             {{ __('Pinjaman') }}
                         </x-nav-link>
                     @endif
@@ -82,11 +82,11 @@
             </x-responsive-nav-link>
 
             @if(Auth::user()->isMember())
-                <x-responsive-nav-link :href="'#'" :active="request()->routeIs('savings.*')">
+                <x-responsive-nav-link :href="route('savings.index')" :active="request()->routeIs('savings.*')">
                     {{ __('Simpanan') }}
                 </x-responsive-nav-link>
 
-                <x-responsive-nav-link :href="'#'" :active="request()->routeIs('loans.*')">
+                <x-responsive-nav-link :href="route('loans.index')" :active="request()->routeIs('loans.*')">
                     {{ __('Pinjaman') }}
                 </x-responsive-nav-link>
             @endif

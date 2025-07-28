@@ -31,9 +31,9 @@ This document outlines all development tasks for the "Koperasi Merah Putih" web 
 - [✅] **T1.2.1** Create users table migration
   - Fields: id, name, nik (unique), email (unique), password, phone_number, address, profile_picture_url, ktp_image_url, account_status (enum), timestamps, soft deletes
 - [✅] **T1.2.2** Create savings_transactions table migration
-  - Fields: id, user_id, transaction_type (setor/tarik), savings_type (pokok/wajib/sukarela), amount, description, transaction_proof_url, transaction_date, processed_by_admin_id, timestamps
+  - Fields: id, user_id, transaction_type (setor/tarik), savings_type (pokok/wajib/sukarela), amount, description, transaction_proof_url, transaction_date, processed_by_admin_id, status (pending/completed/rejected), timestamps
 - [✅] **T1.2.3** Create loans table migration
-  - Fields: id, user_id, principal_amount, interest_rate, duration_months, status (pending/approved/rejected/completed/disbursed), reason, application_date, approval_date, approved_by_admin_id, timestamps, soft deletes
+  - Fields: id, user_id, principal_amount, interest_rate, duration_months, monthly_installment, status (pending/approved/rejected/completed/disbursed), reason, application_date, approval_date, approved_by_admin_id, approval_notes, first_installment_date, total_paid, remaining_balance, timestamps, soft deletes
 - [✅] **T1.2.4** Create loan_installments table migration
   - Fields: id, loan_id, amount, payment_date, transaction_proof_url, processed_by_admin_id, timestamps
 - [✅] **T1.2.5** Create announcements table migration
@@ -44,11 +44,17 @@ This document outlines all development tasks for the "Koperasi Merah Putih" web 
   - Fields: id, user_id, action, description, log_time
 - [✅] **T1.2.8** Add database indexes for performance optimization
   - Users: email, nik, account_status indexes
-  - Savings transactions: user_id + transaction_date composite index
+  - Savings transactions: user_id + transaction_date composite index, status + transaction_type index
   - Loans: user_id, status indexes
   - Loan installments: loan_id index
   - Announcements: created_at index
   - Audit logs: user_id + action composite index
+
+- [✅] **T1.2.9** Database schema updates and enhancements
+  - Add missing columns to loans table (monthly_installment, approval_notes, first_installment_date, total_paid, remaining_balance)
+  - Add status field to savings_transactions table for approval workflow
+  - Create backward compatibility accessors in Loan model
+  - Update fillable arrays and model relationships
 
 ### 1.3 Authentication System
 **Duration:** 2-3 days  
@@ -95,8 +101,10 @@ This document outlines all development tasks for the "Koperasi Merah Putih" web 
   - User and admin relationships
   - Loan installments relationship (hasMany)
   - Soft deletes implementation
-  - Business logic for loan calculations and status management
+  - Business logic for loan calculations (monthly_installment, total_paid, remaining_balance)
+  - Status management methods with automatic transitions
   - Enum casting for status
+  - Backward compatibility accessors for view consistency
 - [✅] **T2.2.4** Create LoanInstallment model
   - Loan and admin processor relationships
   - Date casting and formatting
@@ -160,7 +168,7 @@ This document outlines all development tasks for the "Koperasi Merah Putih" web 
 - [✅] **T3.3.1** Create savings transaction history page
   - Table: transaction_date | transaction_type | savings_type | status | description | amount | balance
   - Pagination for large datasets
-  - Use savings_transactions table data
+  - Use savings_transactions table data with status filtering
 - [✅] **T3.3.2** Implement filtering system (Livewire)
   - Filter by savings_type (pokok/wajib/sukarela)
   - Filter by transaction_type (setor/tarik)
@@ -171,13 +179,15 @@ This document outlines all development tasks for the "Koperasi Merah Putih" web 
   - Create withdrawal as 'tarik' transaction in savings_transactions
   - Amount input with validation against sukarela balance
   - Note/reason field in description
-  - Confirmation modal
+  - Confirmation modal with status tracking
+  - Default status to 'pending' for admin approval
   - **Rule:** Only Simpanan Sukarela can be withdrawn
 - [✅] **T3.3.4** Implement withdrawal request submission logic
   - Validate sufficient balance
-  - Create withdrawal request record
-  - Default status to 'pending'
-  - Send notification to admin
+  - Create withdrawal request record with status = 'pending'
+  - Record processed_by_admin_id when admin processes
+  - Send notification to admin for pending requests
+  - Email notification to member when status changes
 - [✅] **T3.3.5** Create withdrawal request status tracking
 - [✅] **T3.3.6** Test savings management features
 - [✅] **T3.3.7** Improve UI/UX modal and alert
@@ -201,30 +211,60 @@ This document outlines all development tasks for the "Koperasi Merah Putih" web 
 **Duration:** 5-6 days  
 **Dependencies:** T3.2
 
-- [ ] **T3.4.1** Create loan application form
-  - principal_amount input with validation
+- [✅] **T3.4.1** Create loan application form
+  - principal_amount input with validation (minimum Rp 300,000)
   - duration_months selection (3/6/12 months dropdown)
-  - reason text field (stored in description)
-- [ ] **T3.4.2** Implement interactive loan calculator (Livewire)
+  - reason text field (stored as reason in database)
+  - Auto-calculate and display monthly_installment
+- [✅] **T3.4.2** Implement interactive loan calculator (Livewire)
   - Real-time calculation based on admin-set interest rate
-  - Display monthly payment amount
+  - Display monthly_installment amount
   - Show total interest and total payment
-- [ ] **T3.4.3** Create loan application submission logic
-  - Validation rules for principal_amount and duration_months
+  - Update calculations when principal_amount or duration_months changes
+- [✅] **T3.4.3** Create loan application submission logic
+  - Validation rules for principal_amount (min Rp 300,000) and duration_months
   - Save application with status = 'pending'
+  - Store calculated monthly_installment
   - Set application_date to current timestamp
   - Lock current interest_rate from system settings
-  - Email notifications
-- [ ] **T3.4.4** Implement loan status tracking page
-  - Display application history
+  - Ensure mandatory savings compliance before approval
+  - Email notifications to admin
+- [✅] **T3.4.4** Implement loan status tracking page
+  - Display application history with detailed status
   - Show current status with progress indicator
-  - Display approval/rejection reasons
-- [ ] **T3.4.5** Create active loan details view
-  - Display loan details (principal_amount, interest_rate, duration_months)
+  - Display approval/rejection reasons (approval_notes)
+  - Show disbursement date (first_installment_date) when applicable
+- [✅] **T3.4.5** Create active loan details view
+  - Display loan details (principal_amount, interest_rate, duration_months, monthly_installment)
   - Payment history from loan_installments table
-  - Calculate remaining balance
-  - Next payment due calculation
-- [ ] **T3.4.6** Test loan management workflow
+  - Show total_paid and remaining_balance in real-time
+  - Calculate and display next payment due date
+  - Progress indicator showing payment completion percentage
+- [✅] **T3.4.6** Validate loan request requirements
+    - ensure there are no arrears in mandatory savings (Pokok & Wajib compliance)
+    - minimum loan request Rp. 300,000
+    - make sure the principal savings (Simpanan Pokok) have been met
+    - verify Simpanan Wajib one-time payment completed
+- [✅] **T3.4.7** Make sure Loan management using same style as savings management
+  - Consistent UI/UX with savings module
+  - Similar modal designs and form validation
+  - Matching color schemes and layouts
+  - Test loan management workflow end-to-end
+- [✅] **T3.4.8** add new table below loan history to load installment payments in the following months
+    - Include columns for month, due_date, amount_due, amount_paid, and status, button to trigger modal form pay installment
+    - Implement backend logic to fetch and display upcoming installment payments
+    - Show installment payment history with status tracking
+    - Include button to trigger modal form for paying installment
+    - Ensure installment payment status updates correctly
+    - The due date is set based on a calculation of 30 days after the application is approved by the administrator. Likewise for subsequent months, it is calculated 30 days after the due date of the previous month.
+- [ ] **T3.4.9** Add a modal request form feature to pay installments
+  - Create modal form for manual installment payment requests.
+  - using same style as withdrawal request modal.
+  - input type (monthly installment amount(readonly), proof of transfer image)
+  - Validate proof of transfer image (max 2MB, JPG/PNG/PDF)
+  - Show success message on successful installment payment request
+  - Show error message on validation failure
+  - create a new loan installment with default status = 'pending'
 
 ### 3.5 Profile Management
 **Duration:** 2-3 days  
@@ -289,22 +329,26 @@ This document outlines all development tasks for the "Koperasi Merah Putih" web 
 **Dependencies:** T4.1
 
 - [ ] **T4.3.1** Create SavingsTransaction Filament resource
-  - List view with comprehensive filters (user, transaction_type, savings_type, date)
+  - List view with comprehensive filters (user, transaction_type, savings_type, status, date)
   - Search by member name, transaction description
-  - Display transaction_proof_url images
+  - Display transaction_proof_url images in modal view
+  - Status-based filtering (pending/completed/rejected)
+  - Bulk approval/rejection actions for efficiency
 - [ ] **T4.3.2** Implement manual deposit entry system
   - Member selection dropdown
   - savings_type selection (pokok/wajib/sukarela)
   - Amount input with validation (Pokok: Rp 50,000, Wajib: Rp 100,000 one-time, Sukarela: any)
   - transaction_proof_url upload (JPG/PNG/PDF, max 2MB)
-  - Set transaction_type to 'setor'
+  - Set transaction_type to 'setor' and status to 'completed'
   - Record processed_by_admin_id
-  - **Validation:** Check if Wajib already paid, enforce Pokok amount
+  - **Validation:** Check if Wajib already paid, enforce Pokok monthly compliance
 - [ ] **T4.3.3** Create withdrawal processing system
   - Process pending 'tarik' transactions from savings_transactions
-  - Update transaction with processed_by_admin_id
-  - Email notification to member
-  - Balance validation before processing
+  - Approve/Reject with status update to 'completed'/'rejected'
+  - Record processed_by_admin_id and timestamp
+  - Email notification to member with status and notes
+  - Balance validation before processing (sufficient sukarela balance)
+  - Rejection reason recording capability
 - [ ] **T4.3.4** Implement general ledger view
   - Comprehensive transaction history
   - Advanced filtering options
@@ -322,20 +366,24 @@ This document outlines all development tasks for the "Koperasi Merah Putih" web 
 - [ ] **T4.4.2** Implement loan application review system
   - Filter loans by status = 'pending'
   - Member financial history from savings_transactions
-  - Approve/Reject functionality (update status, approval_date, approved_by_admin_id)
-  - Reason field for rejections
-  - Email notifications
+  - Validate mandatory savings compliance (Pokok & Wajib)
+  - Approve/Reject functionality (update status, approval_date, approved_by_admin_id, approval_notes)
+  - Set first_installment_date when approving and changing status to 'disbursed'
+  - Initialize remaining_balance = total payment amount
+  - Email notifications with detailed notes
 - [ ] **T4.4.3** Create loan installment recording system
   - Payment entry form for loan_installments table
   - Amount, payment_date, transaction_proof_url fields
   - Record processed_by_admin_id
-  - Automatic remaining balance calculation
-  - Update loan status to 'completed' when fully paid
+  - Automatic total_paid increment and remaining_balance calculation
+  - Update loan status to 'completed' when remaining_balance reaches zero
+  - Support for partial and full payments
 - [ ] **T4.4.4** Implement loan status management
   - Status transitions: pending → approved → disbursed → completed
-  - Handle early payments through loan_installments
-  - Late payment tracking and notifications
-  - Soft delete functionality for loans
+  - Handle early payments through loan_installments with total_paid tracking
+  - Late payment tracking using first_installment_date and payment schedule
+  - Automated status updates based on remaining_balance
+  - Soft delete functionality for loans with audit trail
 - [ ] **T4.4.5** Test loan management features
 
 ### 4.5 Reporting System
@@ -549,17 +597,42 @@ This document outlines all development tasks for the "Koperasi Merah Putih" web 
 
 ---
 
+## Current Development Status (Updated: July 28, 2025)
+
+### ✅ Completed Phases:
+- **Phase 1**: Foundation & Core Setup (100% Complete)
+- **Phase 2**: RBAC Implementation (100% Complete)  
+- **Phase 3**: Member Portal (85% Complete)
+  - ✅ Member Registration & Verification
+  - ✅ Member Dashboard
+  - ✅ Savings Management (with status workflow)
+  - ✅ Loan Management (with database structure updates)
+  - ❌ Profile Management (Pending)
+
+### 🔄 In Progress:
+- **Database Structure Enhancements**: Enhanced loans table with monthly_installment, total_paid, remaining_balance, approval_notes
+- **Status Workflow Implementation**: Added pending/completed/rejected status to savings transactions
+- **Loan Calculation System**: Real-time calculation and storage of monthly installments
+
+### 📋 Next Priority Tasks:
+1. Complete Profile Management (T3.5.x)
+2. Administrator Panel Implementation (T4.x)
+3. Supervisor Panel Setup (T5.x)
+
+---
+
 ## Timeline Summary
 
-| **Phase** | **Duration** | **Priority** |
-|-----------|--------------|--------------|
-| Phase 1: Foundation & Core Setup | 6-9 days | Critical |
-| Phase 2: RBAC | 5-7 days | Critical |
-| Phase 3: Member Portal | 18-22 days | High |
-| Phase 4: Administrator Panel | 21-27 days | High |
-| Phase 5: Supervisor Panel | 5-7 days | Medium |
-| Phase 6: Security & Optimization | 7-10 days | High |
-| Phase 7: Testing & QA | 15-19 days | Critical |
+| **Phase** | **Duration** | **Priority** | **Status** |
+| **Phase** | **Duration** | **Priority** | **Status** |
+|-----------|--------------|--------------|-------------|
+| Phase 1: Foundation & Core Setup | 6-9 days | Critical | ✅ **Completed** |
+| Phase 2: RBAC | 5-7 days | Critical | ✅ **Completed** |
+| Phase 3: Member Portal | 18-22 days | High | 🔄 **85% Complete** |
+| Phase 4: Administrator Panel | 21-27 days | High | ❌ **Pending** |
+| Phase 5: Supervisor Panel | 5-7 days | Medium | ❌ **Pending** |
+| Phase 6: Security & Optimization | 7-10 days | High | ❌ **Pending** |
+| Phase 7: Testing & QA | 15-19 days | Critical | ❌ **Pending** |
 
 **Total Estimated Duration: 77-101 days (15-20 weeks)**
 
